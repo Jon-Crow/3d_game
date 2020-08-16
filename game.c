@@ -14,6 +14,7 @@
 #define DIR_Y   (plyr->dir->y)
 #define PLANE_X (plyr->plane->x)
 #define PLANE_Y (plyr->plane->y)
+#define RENDER_DIVISION (2)
 
 static int odd;
 
@@ -111,7 +112,7 @@ void render(Tigr* screen)
     int w = screen->w,
         h = screen->h;
 
-    odd = (odd ? 0 : 1);
+    odd = (odd+1)%RENDER_DIVISION;
 
     for(int y = 0; y < h; y++)
     {
@@ -133,14 +134,14 @@ void render(Tigr* screen)
 
         // calculate the real world step vector we have to add for each x (parallel to camera plane)
         // adding step by step avoids multiplications with a weight in the inner loop
-        float floorStepX = rowDistance * (rayDirX1 - rayDirX0) / w * 2;
-        float floorStepY = rowDistance * (rayDirY1 - rayDirY0) / w * 2;
+        float floorStepX = rowDistance * (rayDirX1 - rayDirX0) / w * RENDER_DIVISION;
+        float floorStepY = rowDistance * (rayDirY1 - rayDirY0) / w * RENDER_DIVISION;
 
         // real world coordinates of the leftmost column. This will be updated as we step to the right.
         float floorX = POS_X + rowDistance * rayDirX0;
         float floorY = POS_Y + rowDistance * rayDirY0;
 
-        for(int x = odd; x < w; x+=2)
+        for(int x = odd; x < w; x+=RENDER_DIVISION)
         {
             // the cell coord is simply got from the integer parts of floorX and floorY
             int cellX = (int)(floorX);
@@ -162,7 +163,7 @@ void render(Tigr* screen)
     }
 
     //RENDER WALLS
-    for(int x = odd; x < w; x+=2)
+    for(int x = odd; x < w; x+=RENDER_DIVISION)
     {
         //calculate ray position and direction
         float camX = 2.0f * x / w - 1; //x-coordinate in camera space
