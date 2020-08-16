@@ -15,6 +15,8 @@
 #define PLANE_X (plyr->plane->x)
 #define PLANE_Y (plyr->plane->y)
 
+static int odd;
+
 typedef struct
 {
     Vector2f* pos;
@@ -44,6 +46,7 @@ void free_player(Player* plyr)
 void init_game()
 {
     plyr = new_player();
+    odd = 0;
 }
 void free_game()
 {
@@ -108,6 +111,8 @@ void render(Tigr* screen)
     int w = screen->w,
         h = screen->h;
 
+    odd = (odd ? 0 : 1);
+
     for(int y = 0; y < h; y++)
     {
         // rayDir for leftmost ray (x = 0) and rightmost ray (x = w)
@@ -128,14 +133,14 @@ void render(Tigr* screen)
 
         // calculate the real world step vector we have to add for each x (parallel to camera plane)
         // adding step by step avoids multiplications with a weight in the inner loop
-        float floorStepX = rowDistance * (rayDirX1 - rayDirX0) / w;
-        float floorStepY = rowDistance * (rayDirY1 - rayDirY0) / w;
+        float floorStepX = rowDistance * (rayDirX1 - rayDirX0) / w * 2;
+        float floorStepY = rowDistance * (rayDirY1 - rayDirY0) / w * 2;
 
         // real world coordinates of the leftmost column. This will be updated as we step to the right.
         float floorX = POS_X + rowDistance * rayDirX0;
         float floorY = POS_Y + rowDistance * rayDirY0;
 
-        for(int x = 0; x < w; ++x)
+        for(int x = odd; x < w; x+=2)
         {
             // the cell coord is simply got from the integer parts of floorX and floorY
             int cellX = (int)(floorX);
@@ -157,7 +162,7 @@ void render(Tigr* screen)
     }
 
     //RENDER WALLS
-    for(int x = 0; x < w; x++)
+    for(int x = odd; x < w; x+=2)
     {
         //calculate ray position and direction
         float camX = 2.0f * x / w - 1; //x-coordinate in camera space
