@@ -64,11 +64,7 @@ void init_textures()
     init_texture(textures[TEXTURE_STONE],    "res/textures/stone.png");
     init_texture(textures[TEXTURE_WOOD],     "res/textures/wood.png");
     init_texture(textures[TEXTURE_OBSIDIAN], "res/textures/obsidian.png");
-
-    /*
-    for(int i = 0; i < (TEXTURE_WIDTH*TEXTURE_HEIGHT); i++)
-        textures[TEXTURE_STONE]->px[i]->g =i%256;
-        */
+    init_texture(textures[TEXTURE_WIZARD],   "res/textures/wizard.png");
 }
 void free_textures()
 {

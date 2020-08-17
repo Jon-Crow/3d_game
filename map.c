@@ -4,10 +4,7 @@
 #include "map.h"
 #include "texture.h"
 
-#define MAP_WIDTH  (50)
-#define MAP_HEIGHT (50)
-
-static int map[MAP_WIDTH*MAP_HEIGHT] =
+static int map[MAP_HEIGHT][MAP_WIDTH] =
 {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,0,2,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
@@ -60,20 +57,22 @@ static int map[MAP_WIDTH*MAP_HEIGHT] =
     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
 };
+static Sprite* sprites[SPRITE_COUNT];
 
 void init_map()
 {
-
+    sprites[0] = new_sprite(5.5f, 2.5f, TEXTURE_WIZARD, SPRITE_TYPE_ENEMY);
 }
 void free_map()
 {
-
+    for(int i = 0; i < SPRITE_COUNT; i++)
+        free_sprite(sprites[i]);
 }
 Texture* getTextureAt(int x, int y)
 {
     //printf("getting texture at (%d, %d)\n", x, y);
     if( (x >= 0 && x < MAP_WIDTH) && (y >= 0 && y < MAP_HEIGHT) )
-        return getTexture(map[y*MAP_WIDTH+x]-1);
+        return getTexture(map[y][x]-1);
     return NULL;
 }
 int isWallAt(int x, int y)
@@ -82,17 +81,31 @@ int isWallAt(int x, int y)
     if( (x >= 0 && x < MAP_WIDTH) && (y >= 0 && y < MAP_HEIGHT) )
     {
         //printf("result: %d\n", map[y*MAP_WIDTH+x]);
-        return map[y*MAP_WIDTH+x] > 0;
+        return map[y][x] > 0;
     }
     return 1;
 }
-Texture* getFloorTexture()
+Texture* getFloorTexture(int x, int y)
 {
+    if(x%2 == 0)
+        return getTexture(TEXTURE_OBSIDIAN);
     return getTexture(TEXTURE_WOOD);
 }
-Texture* getCeilingTexture()
+Texture* getCeilingTexture(int x, int y)
 {
+    if(y%2 == 0)
+        return getTexture(TEXTURE_WOOD);
     return getTexture(TEXTURE_OBSIDIAN);
+}
+Sprite* getSprite(int i)
+{
+    if(i >= 0 && i < SPRITE_COUNT)
+        return sprites[i];
+    return NULL;
+}
+void sortSprites(int order[SPRITE_COUNT], float dist[SPRITE_COUNT])
+{
+
 }
 
 

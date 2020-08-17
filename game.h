@@ -3,6 +3,9 @@
 
 #include "tigr.h"
 
+#define SCREEN_WIDTH  (800)
+#define SCREEN_HEIGHT (600)
+
 void init_game();
 void free_game();
 void update(Tigr* screen, float delta);

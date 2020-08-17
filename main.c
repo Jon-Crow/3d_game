@@ -7,9 +7,6 @@
 #include "texture.h"
 #include "tigr.h"
 
-#define SCREEN_WIDTH  (800)
-#define SCREEN_HEIGHT (600)
-
 float randFloat()
 {
     return (float)rand()/(float)RAND_MAX;
@@ -24,6 +21,7 @@ int main(int argc, char *argv[])
 {
     Tigr* screen;
     Tigr* fontImg;
+    TigrFont* mainFont;
     float delta, fpsTime = 0;
     int frameCount = 0, fps;
     char fpsStr[16];
@@ -31,7 +29,7 @@ int main(int argc, char *argv[])
     printf("about to initialize my shit\n");
 
     fontImg = tigrLoadImage("res/fonts/main.png");
-    TigrFont *mainFont = tigrLoadFont(fontImg, 1252);
+    mainFont = tigrLoadFont(fontImg, 1252);
 
     init_textures();
     printf("textures initialized\n");
@@ -72,7 +70,6 @@ int main(int argc, char *argv[])
     free_textures();
     printf("textures freed\n");
     tigrFree(fontImg);
-    tigrFreeFont(mainFont);
     tigrFree(screen);
 
     printf("Shit has been freed\n");
