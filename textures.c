@@ -55,16 +55,16 @@ void init_texture(Texture* tx, const char* path)
 }
 void init_textures()
 {
-    textures = malloc(TEXTURE_COUNT*sizeof(Texture));
-    if(textures == NULL)
-        return;
-    for(int i = 0; i < TEXTURE_COUNT; i++)
-        textures[i] = new_texture(TEXTURE_WIDTH, TEXTURE_HEIGHT);
+	textures = malloc(TEXTURE_COUNT*sizeof(Texture));
+	if(textures == NULL)
+		return;
+	for(int i = 0; i < TEXTURE_COUNT; i++)
+		textures[i] = new_texture(TEXTURE_WIDTH, TEXTURE_HEIGHT);
 
-    init_texture(textures[TEXTURE_STONE],    "res/textures/stone.png");
-    init_texture(textures[TEXTURE_WOOD],     "res/textures/wood.png");
-    init_texture(textures[TEXTURE_OBSIDIAN], "res/textures/obsidian.png");
-    init_texture(textures[TEXTURE_WIZARD],   "res/textures/wizard.png");
+	init_texture(textures[TEXTURE_OBSIDIAN], "res/textures/obsidian.png");
+	init_texture(textures[TEXTURE_STONE], "res/textures/stone.png");
+	init_texture(textures[TEXTURE_WIZARD], "res/textures/wizard.png");
+	init_texture(textures[TEXTURE_WOOD], "res/textures/wood.png");
 }
 void free_textures()
 {

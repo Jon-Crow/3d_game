@@ -3,6 +3,7 @@
 
 #include "texture.h"
 #include "sprite.h"
+#include "game.h"
 
 #define MAP_WIDTH    (50)
 #define MAP_HEIGHT   (50)
@@ -16,5 +17,7 @@ Texture* getFloorTexture(int x, int y);
 Texture* getCeilingTexture(int x, int y);
 Sprite* getSprite(int i);
 void sortSprites(int order[SPRITE_COUNT], float dist[SPRITE_COUNT]);
+
+void loadMap(Player* plyr, int m);
 
 #endif // MAP_H

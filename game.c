@@ -4,7 +4,6 @@
 #include <math.h>
 
 #include "game.h"
-#include "vectors.h"
 #include "texture.h"
 #include "map.h"
 
@@ -15,13 +14,6 @@
 #define PLANE_X (plyr->plane->x)
 #define PLANE_Y (plyr->plane->y)
 #define RENDER_DIVISION (2)
-
-typedef struct
-{
-    Vector2f* pos;
-    Vector2f* dir;
-    Vector2f* plane;
-} Player;
 
 static Player* plyr;
 static int odd;
@@ -42,6 +34,7 @@ Player* new_player()
 }
 void free_player(Player* plyr)
 {
+    printf("dir: %.2f, %.2f\n", DIR_X, DIR_Y);
     free_vector2f(plyr->dir);
     free_vector2f(plyr->plane);
     free(plyr);
@@ -57,6 +50,8 @@ void init_game()
     }
     for(int i = 0; i < SCREEN_WIDTH; i++)
         zBuff[i] = 0;
+
+    loadMap(plyr, 0);
 }
 void free_game()
 {
@@ -80,6 +75,15 @@ void setPixel(Tigr* screen, int x, int y, TPixel* clr)
         px->g = clr->g;
         px->b = clr->b;
     }
+}
+void setPixelI(Tigr* screen, int i, TPixel* clr)
+{
+    TPixel* px = &(screen->pix[i]);
+    if(px == NULL)
+        return;
+    px->r = clr->r;
+    px->g = clr->g;
+    px->b = clr->b;
 }
 void setPixelScaled(Tigr* screen, int x, int y, TPixel* clr, float scale)
 {
@@ -106,12 +110,9 @@ void move(Vector2f* pos, Vector2f* dir, float spd)
 }
 void rotate(float spd)
 {
-    float oldDirX = DIR_X,
-          oldPlaneX = PLANE_X;
-    DIR_X = (float)(DIR_X * cos(-spd) - DIR_Y * sin(-spd));
-    DIR_Y = (float)(oldDirX * sin(-spd) + DIR_Y * cos(-spd));
-    PLANE_X = (float)(PLANE_X * cos(-spd) - PLANE_Y * sin(-spd));
-    PLANE_Y = (float)(oldPlaneX * sin(-spd) + PLANE_Y * cos(-spd));
+    rotateVector2f(plyr->dir, -spd);
+    normalize(plyr->dir);
+    rotateVector2f(plyr->plane, -spd);
 }
 void updateSprites(float delta)
 {
@@ -251,7 +252,8 @@ void renderWalls(Tigr* screen, int w, int h)
         // Starting texture coordinate
         float texPos = (drawStart - h / 2 + lineHeight / 2) * step;
 
-        for(int y = drawStart; y < drawEnd; y++)
+        drawEnd = drawEnd*w+x;
+        for(int i = drawStart*w+x; i < drawEnd; i+=w)
         {
             // Cast the texture coordinate to integer, and mask with (texHeight - 1) in case of overflow
             int texY = (int)texPos & (TEXTURE_HEIGHT - 1);
@@ -260,10 +262,7 @@ void renderWalls(Tigr* screen, int w, int h)
 
             //FOR FOG
             //setPixelScaled(screen, x, y, px, fmin(1.0f, 2.0f/perpWallDist));
-            if(side == 0)
-                setPixel(screen, x, y, px);
-            else
-                setPixelScaled(screen, x, y, px, 0.67f);
+            setPixelI(screen, i, px);
         }
 
         zBuff[x] = perpWallDist;
@@ -298,6 +297,8 @@ void renderFloorCeiling(Tigr* screen, int w, int h)
         float floorX = POS_X + rowDistance * rayDirX0;
         float floorY = POS_Y + rowDistance * rayDirY0;
 
+        int iFloor = y*w,
+            iCeil  = (h-y-1)*w;
         for(int x = odd; x < w; x+=RENDER_DIVISION)
         {
             // the cell coord is simply got from the integer parts of floorX and floorY
@@ -314,8 +315,8 @@ void renderFloorCeiling(Tigr* screen, int w, int h)
             //canvas.setRGB(x, y, map.getFloor().getColor(tx, ty));
             //canvas.setRGB(x, h-y-1, map.getCeiling().getColor(tx, ty));
             //getColor(tx, texX, texY);
-            setPixel(screen, x, y, getColor(getFloorTexture(cellX, cellY), tx, ty));
-            setPixel(screen, x, h-y-1, getColor(getCeilingTexture(cellX, cellY), tx, ty));
+            setPixelI(screen, x+iFloor, getColor(getFloorTexture(cellX, cellY), tx, ty));
+            setPixelI(screen, x+iCeil, getColor(getCeilingTexture(cellX, cellY), tx, ty));
         }
     }
 }

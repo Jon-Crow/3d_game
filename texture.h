@@ -6,10 +6,10 @@
 #define TEXTURE_WIDTH    (64)
 #define TEXTURE_HEIGHT   (64)
 #define TEXTURE_COUNT    (4)
-#define TEXTURE_STONE    (0)
-#define TEXTURE_WOOD     (1)
-#define TEXTURE_OBSIDIAN (2)
-#define TEXTURE_WIZARD   (3)
+#define TEXTURE_OBSIDIAN (0)
+#define TEXTURE_STONE    (1)
+#define TEXTURE_WIZARD   (2)
+#define TEXTURE_WOOD     (3)
 
 typedef struct
 {

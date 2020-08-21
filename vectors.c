@@ -33,6 +33,16 @@ void pointTo(Vector2f* v, Vector2f* p1, Vector2f* p2)
     v->y = p2->y - p1->y;
     normalize(v);
 }
+void rotateVector2f(Vector2f* v, float rad)
+{
+    float oldX, oldY, cosRad, sinRad;
+    oldX = v->x;
+    oldY = v->y;
+    cosRad = cos(rad);
+    sinRad = sin(rad);
+    v->x = v->x*cosRad - v->y*sinRad;
+    v->y = oldX*sinRad + oldY*cosRad;
+}
 
 
 
