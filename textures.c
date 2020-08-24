@@ -4,7 +4,7 @@
 #include <string.h>
 
 #include "texture.h"
-#include "libbmp.h"
+#include "animation.h"
 
 static Texture** textures;
 
@@ -61,16 +61,29 @@ void init_textures()
 	for(int i = 0; i < TEXTURE_COUNT; i++)
 		textures[i] = new_texture(TEXTURE_WIDTH, TEXTURE_HEIGHT);
 
-	init_texture(textures[TEXTURE_OBSIDIAN], "res/textures/obsidian.png");
-	init_texture(textures[TEXTURE_STONE], "res/textures/stone.png");
-	init_texture(textures[TEXTURE_WIZARD], "res/textures/wizard.png");
-	init_texture(textures[TEXTURE_WOOD], "res/textures/wood.png");
+	init_texture(textures[TEXTURE_BIRCH_PLANKS], "res/textures/birch_planks.png");
+	init_texture(textures[TEXTURE_COBBLESTONE], "res/textures/cobblestone.png");
+	init_texture(textures[TEXTURE_CRACKED_STONE_BRICKS], "res/textures/cracked_stone_bricks.png");
+	init_texture(textures[TEXTURE_DARK_OAK_PLANKS], "res/textures/dark_oak_planks.png");
+	init_texture(textures[TEXTURE_DIRT], "res/textures/dirt.png");
+	init_texture(textures[TEXTURE_END_STONE_BRICKS], "res/textures/end_stone_bricks.png");
+	init_texture(textures[TEXTURE_GRASS_BLOCK_TOP], "res/textures/grass_block_top.png");
+	init_texture(textures[TEXTURE_GRASS_PATH_TOP], "res/textures/grass_path_top.png");
+	init_texture(textures[TEXTURE_MOSSY_STONE_BRICKS], "res/textures/mossy_stone_bricks.png");
+	init_texture(textures[TEXTURE_OAK_PLANKS], "res/textures/oak_planks.png");
+	init_texture(textures[TEXTURE_QUARTZ_BRICKS], "res/textures/quartz_bricks.png");
+	init_texture(textures[TEXTURE_QUARTZ_PILLAR], "res/textures/quartz_pillar.png");
+	init_texture(textures[TEXTURE_SPRUCE_PLANKS], "res/textures/spruce_planks.png");
+	init_texture(textures[TEXTURE_STONE_BRICKS], "res/textures/stone_bricks.png");
+
+	init_animationTextures();
 }
 void free_textures()
 {
     for(int i = 0; i < TEXTURE_COUNT; i++)
         free_texture(textures[i]);
     free(textures);
+    free_animationTextures();
 }
 Texture* getTexture(int t)
 {
@@ -80,7 +93,6 @@ Texture* getTexture(int t)
 }
 TPixel* getColor(Texture* tx, int x, int y)
 {
-    //printf("texture: %d\n", tx);
     int i = y*TEXTURE_WIDTH+x;
     if(i >= 0 && i < (TEXTURE_WIDTH*TEXTURE_HEIGHT))
         return tx->px[i];

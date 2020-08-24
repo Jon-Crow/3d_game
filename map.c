@@ -164,15 +164,16 @@ static int ceil[MAP_HEIGHT][MAP_WIDTH] =
 	4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,
 };
 
-static Sprite* sprites[SPRITE_COUNT];
+static Sprite* sprites[SPRITE_MAX];
+static int spriteCount;
 
 void init_map()
 {
-    sprites[0] = new_sprite(5.5f, 2.5f, TEXTURE_WIZARD, SPRITE_TYPE_ENEMY);
+    spriteCount = 0;
 }
 void free_map()
 {
-    for(int i = 0; i < SPRITE_COUNT; i++)
+    for(int i = 0; i < spriteCount; i++)
         free_sprite(sprites[i]);
 }
 Texture* getTextureAt(int x, int y)
@@ -200,68 +201,128 @@ Texture* getFloorTexture(int x, int y)
 {
     if(inMapBounds(x, y))
         return getTexture(floor[y][x]-1);
-    return getTexture(TEXTURE_WOOD);
+    return getTexture(TEXTURE_COBBLESTONE);
 }
 Texture* getCeilingTexture(int x, int y)
 {
     if(inMapBounds(x, y))
         return getTexture(ceil[y][x]-1);
-    return getTexture(TEXTURE_OBSIDIAN);
+    return getTexture(TEXTURE_COBBLESTONE);
 }
 Sprite* getSprite(int i)
 {
-    if(i >= 0 && i < SPRITE_COUNT)
+    if(i >= 0 && i < spriteCount)
         return sprites[i];
     return NULL;
 }
-void sortSprites(int order[SPRITE_COUNT], float dist[SPRITE_COUNT])
+void sortSprites(int order[SPRITE_MAX], float dist[SPRITE_MAX])
 {
 
 }
+int getSpriteCount()
+{
+    return spriteCount;
+}
+void addSprite(float x, float y, int tx, void (*actor)(Sprite*, int, float), void (*freeType)(void*), void* type)
+{
+    if(spriteCount >= SPRITE_MAX)
+        return;
+    Sprite* sp = new_sprite(x, y, getTexture(tx), actor, freeType, type);
+    sprites[spriteCount] = sp;
+    spriteCount++;
+}
+void removeSprite(Sprite* sp)
+{
+    for(int i = 0; i < spriteCount; i++)
+    {
+        if(sprites[i] == sp)
+            removeSpriteAt(i);
+    }
+}
+void removeSpriteAt(int sprite)
+{
+    if(sprite >= 0 && sprite < spriteCount)
+    {
+        free_sprite(sprites[sprite]);
+        for(int i = sprite+1; i < spriteCount; i++)
+            sprites[i-1] = sprites[i];
+        spriteCount--;
+    }
+}
 
-struct MapRow
-{
-    int floor, wall, ceil;
-};
-struct MapSpawn
-{
-    float posX, posY, rad;
-};
+
+
+
+#define MAP_FILE         ("res/maps/map%d.map")
+#define ACTOR_DECORATION (0)
+#define ACTOR_ENEMY      (1)
 
 void loadMap(Player* plyr, int m)
 {
     FILE* f;
     char path[32];
-    struct MapRow row;
-    struct MapSpawn spawn;
-    row.floor = 0;
-    row.wall = 0;
-    row.ceil = 0;
+    int row[3];
+    float spawn[3];
+    int loadSprites;
+    float spritePos[2];
+    int actorID;
 
-    sprintf(path, "res/maps/map%d.map", m);
+    sprintf(path, MAP_FILE, m);
     f = fopen(path, "r");
 
-    fread(&spawn, sizeof(struct MapSpawn), 1, f);
-    plyr->pos->x = spawn.posX;
-    plyr->pos->y = spawn.posY;
+    fread(spawn, sizeof(float), 3, f);
+    plyr->pos->x = spawn[0];
+    plyr->pos->y = spawn[1];
     plyr->dir->x = 1.0f;
     plyr->dir->y = 0.0f;
     plyr->plane->x = 0.0f;
     plyr->plane->y = 0.66f;
-    rotateVector2f(plyr->dir, spawn.rad);
-    rotateVector2f(plyr->plane, spawn.rad);
-
-    printf("spawn pos: %.2f, %.2f   dir: %.2f\n", spawn.posX, spawn.posY, spawn.rad);
+    rotateVector2f(plyr->dir, spawn[2]);
+    rotateVector2f(plyr->plane, spawn[2]);
 
     for(int y = 0; y < MAP_HEIGHT; y++)
     {
         for(int x = 0; x < MAP_WIDTH; x++)
         {
-            fread(&row, sizeof(struct MapRow), 1, f);
-            floor[y][x] = row.floor;
-            walls[y][x] = row.wall;
-            ceil[y][x]  = row.ceil;
+            fread(row, sizeof(int), 3, f);
+            floor[y][x] = row[0];
+            walls[y][x] = row[1];
+            ceil[y][x]  = row[2];
         }
+    }
+
+    while(getSpriteCount() > 0)
+        removeSpriteAt(getSpriteCount()-1);
+
+    fread(&loadSprites, sizeof(int), 1, f);
+    for(int i = 0; i < loadSprites; i++)
+    {
+        fread(spritePos, sizeof(float), 2, f);
+        fread(&actorID, sizeof(int), 1, f);
+        float x     = spritePos[0];
+        float y     = spritePos[1];
+        void (*actor)(Sprite*, int, float);
+        void (*freeType)(void*);
+        void* type;
+        if(actorID == ACTOR_DECORATION)
+        {
+            type     = NULL;
+            freeType = freeType_decoration;
+            actor    = actor_decoration;
+        }
+        else if(actorID == ACTOR_ENEMY)
+        {
+            type     = new_enemy(ENEMY_ID_BANDIT);
+            freeType = freeType_enemy;
+            actor    = actor_enemy;
+        }
+        else
+        {
+            printf("Invalid sprite type! (%d)\n", actorID);
+            break;
+        }
+        addSprite(x, y, TEXTURE_BIRCH_PLANKS, actor, freeType, type);
+        printf("added sprite\n");
     }
 
     fclose(f);

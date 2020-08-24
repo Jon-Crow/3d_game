@@ -3,6 +3,8 @@
 
 #include "tigr.h"
 #include "vectors.h"
+#include "sprite.h"
+#include "statblock.h"
 
 #define SCREEN_WIDTH  (800)
 #define SCREEN_HEIGHT (600)
@@ -12,11 +14,19 @@ typedef struct
     Vector2f* pos;
     Vector2f* dir;
     Vector2f* plane;
+    StatBlock* stats;
 } Player;
 
 void init_game();
 void free_game();
-void update(Tigr* screen, float delta);
-void render(Tigr* screen);
+void updateGame(Tigr* screen, float delta);
+void renderGame(Tigr* screen);
+
+void actor_decoration(Sprite* sp, int id, float delta);
+void actor_enemy(Sprite* sp, int id, float delta);
+void freeType_decoration(void* type);
+void freeType_enemy(void* type);
+
+void attack_bandit(Enemy* bandit, StatBlock* tar);
 
 #endif // GAME_H

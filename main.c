@@ -1,3 +1,7 @@
+#if defined(__cplusplus)
+  extern "C" {
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/time.h>
@@ -6,6 +10,9 @@
 #include "map.h"
 #include "texture.h"
 #include "tigr.h"
+#include "gamestate.h"
+#include "colors.h"
+#include "menu.h"
 
 float randFloat()
 {
@@ -26,11 +33,15 @@ int main(int argc, char *argv[])
     int frameCount = 0, fps;
     char fpsStr[16];
 
+    setGameState(updateMenu, renderMenu);
+
     printf("about to initialize my shit\n");
 
     fontImg = tigrLoadImage("res/fonts/main.png");
     mainFont = tigrLoadFont(fontImg, 1252);
 
+    init_colors();
+    printf("colors initialized\n");
     init_textures();
     printf("textures initialized\n");
     init_map();
@@ -56,7 +67,7 @@ int main(int argc, char *argv[])
             fpsTime = 0;
         }
         sprintf(fpsStr, "fps: %d", fps);
-        tigrPrint(screen, mainFont, 50, 50, *getColor(getTexture(TEXTURE_STONE), 0, 0), fpsStr);
+        tigrPrint(screen, mainFont, 50, 50, *color(COLOR_WHITE), fpsStr);
 
         tigrUpdate(screen);
     }
@@ -71,7 +82,14 @@ int main(int argc, char *argv[])
     printf("textures freed\n");
     tigrFree(fontImg);
     tigrFree(screen);
+    free_colors();
+    printf("colors freed\n");
 
     printf("Shit has been freed\n");
     return 0;
 }
+
+
+#if defined(__cplusplus)
+  }
+#endif

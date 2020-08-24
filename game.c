@@ -6,20 +6,22 @@
 #include "game.h"
 #include "texture.h"
 #include "map.h"
+#include "colors.h"
 
-#define POS_X   (plyr->pos->x)
-#define POS_Y   (plyr->pos->y)
-#define DIR_X   (plyr->dir->x)
-#define DIR_Y   (plyr->dir->y)
-#define PLANE_X (plyr->plane->x)
-#define PLANE_Y (plyr->plane->y)
+#define POS_X     (plyr->pos->x)
+#define POS_Y     (plyr->pos->y)
+#define DIR_X     (plyr->dir->x)
+#define DIR_Y     (plyr->dir->y)
+#define PLANE_X   (plyr->plane->x)
+#define PLANE_Y   (plyr->plane->y)
 #define RENDER_DIVISION (2)
 
 static Player* plyr;
 static int odd;
-static int spriteOrder[SPRITE_COUNT];
-static float spriteDist[SPRITE_COUNT];
+static int spriteOrder[SPRITE_MAX];
+static float spriteDist[SPRITE_MAX];
 static float zBuff[SCREEN_WIDTH];
+static float enemyCooldowns[SPRITE_MAX];
 
 Player* new_player()
 {
@@ -30,23 +32,27 @@ Player* new_player()
     plyr->pos   = new_vector2f(1.5f,1.5f);
     plyr->dir   = new_vector2f(1.0f,0.0f);
     plyr->plane = new_vector2f(0.0f,0.66f);
+    plyr->stats = new_statblock(100);
+    printf("hp: %d\n", getStat(plyr->stats, STAT_HP));
     return plyr;
 }
 void free_player(Player* plyr)
 {
-    printf("dir: %.2f, %.2f\n", DIR_X, DIR_Y);
+    free_vector2f(plyr->pos);
     free_vector2f(plyr->dir);
     free_vector2f(plyr->plane);
+    free_statblock(plyr->stats);
     free(plyr);
 }
 void init_game()
 {
     plyr = new_player();
     odd = 0;
-    for(int i = 0; i < SPRITE_COUNT; i++)
+    for(int i = 0; i < SPRITE_MAX; i++)
     {
-        spriteOrder[i] = 0;
-        spriteDist[i] = 0;
+        spriteOrder[i]    = 0;
+        spriteDist[i]     = 0;
+        enemyCooldowns[i] = 0;
     }
     for(int i = 0; i < SCREEN_WIDTH; i++)
         zBuff[i] = 0;
@@ -117,24 +123,26 @@ void rotate(float spd)
 void updateSprites(float delta)
 {
     Sprite* sp;
-    for(int i = 0; i < SPRITE_COUNT; i++)
+    for(int i = 0; i < getSpriteCount(); i++)
     {
         sp = getSprite(i);
         spriteOrder[i] = i;
         spriteDist[i] = ((POS_X - sp->pos->x) * (POS_X - sp->pos->x) + (POS_Y - sp->pos->y) * (POS_Y - sp->pos->y));
-        if(sp->type == SPRITE_TYPE_ENEMY)
-        {
-            if(spriteDist[i] < ENEMY_VISION_DIST && spriteDist[i] > ENEMY_MIN_DIST)
-            {
-                pointTo(sp->dir, sp->pos, plyr->pos);
-                move(sp->pos, sp->dir, delta*ENEMY_SPEED);
-            }
-        }
+        sp->actor(sp, i, delta);
     }
     sortSprites(spriteOrder, spriteDist);
 }
-void update(Tigr* screen, float delta)
+
+#define MOUSE_LEFT   (0x001)
+#define MOUSE_MIDDLE (0x010)
+#define MOUSE_RIGHT  (0x100)
+
+void updateGame(Tigr* screen, float delta)
 {
+    static int mBtns_prev = 0;
+    int mX, mY, mBtns;
+    tigrMouse(screen, &mX, &mY, &mBtns);
+
     updateSprites(delta);
     if(tigrKeyHeld(screen, 'W'))
         move(plyr->pos, plyr->dir, delta*2);
@@ -144,6 +152,10 @@ void update(Tigr* screen, float delta)
         rotate(delta*2);
     if(tigrKeyHeld(screen, 'D'))
         rotate(-delta*2);
+    if(mBtns&MOUSE_LEFT && !(mBtns_prev&MOUSE_LEFT))
+        printf("LEFT!\n");
+
+    mBtns_prev = mBtns;
 }
 void renderWalls(Tigr* screen, int w, int h)
 {
@@ -324,7 +336,7 @@ void renderSprites(Tigr* screen, int w, int h)
 {
     Sprite* sp;
     //after sorting the sprites, do the projection and draw them
-    for(int i = 0; i < SPRITE_COUNT; i++)
+    for(int i = 0; i < getSpriteCount(); i++)
     {
         //translate sprite position to relative to camera
         sp = getSprite(spriteOrder[i]);
@@ -359,40 +371,93 @@ void renderSprites(Tigr* screen, int w, int h)
         if(drawEndX >= w) drawEndX = w - 1;
 
 
-        Texture* tx = getTexture(sp->tx);
-        //loop through every vertical stripe of the sprite on screen
-        for(int stripe = drawStartX; stripe < drawEndX; stripe++)
+        Texture* tx = sp->tx;
+        if(tx != NULL)
         {
-            int texX = (int)((stripe - (-spriteWidth / 2 + spriteScreenX)) * TEXTURE_WIDTH / spriteWidth);
-            //the conditions in the if are:
-            //1) it's in front of camera plane so you don't see things behind you
-            //2) it's on the screen (left)
-            //3) it's on the screen (right)
-            //4) ZBuffer, with perpendicular distance
-            if(transformY > 0 && stripe > 0 && stripe < w && transformY < zBuff[stripe])
+            //loop through every vertical stripe of the sprite on screen
+            for(int stripe = drawStartX; stripe < drawEndX; stripe++)
             {
-                for(int y = drawStartY; y < drawEndY; y++) //for every pixel of the current stripe
+                int texX = (int)((stripe - (-spriteWidth / 2 + spriteScreenX)) * TEXTURE_WIDTH / spriteWidth);
+                //the conditions in the if are:
+                //1) it's in front of camera plane so you don't see things behind you
+                //2) it's on the screen (left)
+                //3) it's on the screen (right)
+                //4) ZBuffer, with perpendicular distance
+                if(transformY > 0 && stripe > 0 && stripe < w && transformY < zBuff[stripe])
                 {
-                    int d = (y) * 256 - h * 128 + spriteHeight * 128;
-                    int texY = ((d * TEXTURE_HEIGHT) / spriteHeight) / 256;
-                    TPixel* clr = getColor(tx, texX, texY);
-                    if(clr->r > 0 || clr->g > 0 || clr->b > 0)
-                        setPixel(screen, stripe, y, clr);
+                    for(int y = drawStartY; y < drawEndY; y++) //for every pixel of the current stripe
+                    {
+                        int d = (y) * 256 - h * 128 + spriteHeight * 128;
+                        int texY = ((d * TEXTURE_HEIGHT) / spriteHeight) / 256;
+                        TPixel* clr = getColor(tx, texX, texY);
+                        if(clr != NULL && (clr->r > 0 || clr->g > 0 || clr->b > 0))
+                            setPixel(screen, stripe, y, clr);
+                    }
                 }
             }
         }
     }
 }
-void render(Tigr* screen)
+
+#define HP_BAR_WIDTH(W) (W-100)
+#define HP_BAR_HEIGHT   (10)
+#define HP_BAR_X        (50)
+#define HP_BAR_Y(H)     (H-HP_BAR_HEIGHT-50)
+void renderUI(Tigr* screen, int w, int h)
+{
+    float hpPerc = getStatPercent(plyr->stats, STAT_HP);
+    tigrFill(screen, HP_BAR_X, HP_BAR_Y(h), HP_BAR_WIDTH(w), HP_BAR_HEIGHT, *color(COLOR_RED));
+    tigrFill(screen, HP_BAR_X, HP_BAR_Y(h), HP_BAR_WIDTH(w)*hpPerc, HP_BAR_HEIGHT, *color(COLOR_GREEN));
+}
+void renderGame(Tigr* screen)
 {
     odd = (odd+1)%RENDER_DIVISION;
 
     renderFloorCeiling(screen, screen->w, screen->h);
     renderWalls(screen, screen->w, screen->h);
     renderSprites(screen, screen->w, screen->h);
+    renderUI(screen, screen->w, screen->h);
 }
 
-
+void actor_decoration(Sprite* sp, int id, float delta)
+{}
+void freeType_decoration(void* type)
+{}
+void actor_enemy(Sprite* sp, int id, float delta)
+{
+    Enemy* en = (Enemy*)sp->type;
+    updateAnimation(getEnemyAnimation(en), delta);
+    sp->tx = getAnimationFrame(getEnemyAnimation(en));
+    if(enemyAttacking(en))
+        return;
+    if(spriteDist[id] < ENEMY_VISION_DIST && spriteDist[id] > ENEMY_MIN_DIST)
+    {
+        pointTo(sp->dir, sp->pos, plyr->pos);
+        move(sp->pos, sp->dir, delta*ENEMY_SPEED);
+        setEnemyAnimation(en, ENEMY_ANIMATION_RUN);
+    }
+    else
+        setEnemyAnimation(en, ENEMY_ANIMATION_IDLE);
+    if(spriteDist[id] < ENEMY_ATTACK_DIST)
+    {
+        if(en->cd <= 0)
+        {
+            en->attack(en, plyr->stats);
+            en->cd = en->cdTime;
+            setEnemyAnimation(en, ENEMY_ANIMATION_ATTACK);
+        }
+        else
+            en->cd -= delta;
+    }
+}
+void freeType_enemy(void* type)
+{
+    free_enemy((Enemy*)type);
+}
+void attack_bandit(Enemy* bandit, StatBlock* tar)
+{
+    damage(tar, 5);
+}
 
 
 
