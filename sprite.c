@@ -43,6 +43,7 @@ Enemy* new_enemy(int enemyID)
         anims[ENEMY_ANIMATION_IDLE]   = new_banditIdle();
         anims[ENEMY_ANIMATION_RUN]    = new_banditRun();
         anims[ENEMY_ANIMATION_ATTACK] = new_banditAttack();
+        anims[ENEMY_ANIMATION_HURT]   = new_banditHurt();
         maxHP = 50;
         cdTime = 3;
         attack = attack_bandit;
@@ -85,11 +86,30 @@ void setEnemyAnimation(Enemy* en, int anim)
 int enemyAttacking(Enemy* en)
 {
     if(en->curAnim == ENEMY_ANIMATION_ATTACK)
-    {
         return getEnemyAnimation(en)->done == 0;
-    }
     return 0;
 }
+int enemyHurting(Enemy* en)
+{
+    if(en->curAnim == ENEMY_ANIMATION_HURT)
+        return getEnemyAnimation(en)->done == 0;
+    return 0;
+}
+void damageEnemy(Enemy* en, int amnt)
+{
+    printf("enemy address: %d\n", en);
+    damage(en->stats, amnt);
+    setEnemyAnimation(en, ENEMY_ANIMATION_HURT);
+}
+int isDecoration(Sprite* sp)
+{
+    return sp->actor == actor_decoration;
+}
+int isEnemy(Sprite* sp)
+{
+    return sp->actor == actor_enemy;
+}
+
 
 
 

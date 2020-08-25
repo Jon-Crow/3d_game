@@ -7,6 +7,7 @@
 #include "texture.h"
 #include "map.h"
 #include "colors.h"
+#include "settings.h"
 
 #define POS_X     (plyr->pos->x)
 #define POS_Y     (plyr->pos->y)
@@ -14,13 +15,12 @@
 #define DIR_Y     (plyr->dir->y)
 #define PLANE_X   (plyr->plane->x)
 #define PLANE_Y   (plyr->plane->y)
-#define RENDER_DIVISION (2)
 
 static Player* plyr;
 static int odd;
 static int spriteOrder[SPRITE_MAX];
 static float spriteDist[SPRITE_MAX];
-static float zBuff[SCREEN_WIDTH];
+static float* zBuff;
 static float enemyCooldowns[SPRITE_MAX];
 
 Player* new_player()
@@ -54,7 +54,8 @@ void init_game()
         spriteDist[i]     = 0;
         enemyCooldowns[i] = 0;
     }
-    for(int i = 0; i < SCREEN_WIDTH; i++)
+    zBuff = malloc(getScreenWidth() * sizeof(float));
+    for(int i = 0; i < getScreenWidth(); i++)
         zBuff[i] = 0;
 
     loadMap(plyr, 0);
@@ -62,6 +63,7 @@ void init_game()
 void free_game()
 {
     free_player(plyr);
+    free(zBuff);
 }
 void setPixelRGB(Tigr* screen, int x, int y, int r, int g, int b)
 {
@@ -152,6 +154,16 @@ void updateGame(Tigr* screen, float delta)
         rotate(delta*2);
     if(tigrKeyHeld(screen, 'D'))
         rotate(-delta*2);
+    if(tigrKeyDown(screen, 'X'))
+    {
+        Sprite* sp;
+        for(int i = 0; i < getSpriteCount(); i++)
+        {
+            sp = getSprite(i);
+            if(isEnemy(sp))
+                damageEnemy((Enemy*)sp->type, 5);
+        }
+    }
     if(mBtns&MOUSE_LEFT && !(mBtns_prev&MOUSE_LEFT))
         printf("LEFT!\n");
 
@@ -159,7 +171,7 @@ void updateGame(Tigr* screen, float delta)
 }
 void renderWalls(Tigr* screen, int w, int h)
 {
-    for(int x = odd; x < w; x+=RENDER_DIVISION)
+    for(int x = odd; x < w; x+=getRenderDivison())
     {
         //calculate ray position and direction
         float camX = 2.0f * x / w - 1; //x-coordinate in camera space
@@ -282,6 +294,7 @@ void renderWalls(Tigr* screen, int w, int h)
 }
 void renderFloorCeiling(Tigr* screen, int w, int h)
 {
+    int renderDiv = getRenderDivison();
     for(int y = 0; y < h; y++)
     {
         // rayDir for leftmost ray (x = 0) and rightmost ray (x = w)
@@ -302,8 +315,8 @@ void renderFloorCeiling(Tigr* screen, int w, int h)
 
         // calculate the real world step vector we have to add for each x (parallel to camera plane)
         // adding step by step avoids multiplications with a weight in the inner loop
-        float floorStepX = rowDistance * (rayDirX1 - rayDirX0) / w * RENDER_DIVISION;
-        float floorStepY = rowDistance * (rayDirY1 - rayDirY0) / w * RENDER_DIVISION;
+        float floorStepX = rowDistance * (rayDirX1 - rayDirX0) / w * renderDiv;
+        float floorStepY = rowDistance * (rayDirY1 - rayDirY0) / w * renderDiv;
 
         // real world coordinates of the leftmost column. This will be updated as we step to the right.
         float floorX = POS_X + rowDistance * rayDirX0;
@@ -311,7 +324,7 @@ void renderFloorCeiling(Tigr* screen, int w, int h)
 
         int iFloor = y*w,
             iCeil  = (h-y-1)*w;
-        for(int x = odd; x < w; x+=RENDER_DIVISION)
+        for(int x = odd; x < w; x+=renderDiv)
         {
             // the cell coord is simply got from the integer parts of floorX and floorY
             int cellX = (int)(floorX);
@@ -387,7 +400,7 @@ void renderSprites(Tigr* screen, int w, int h)
                 {
                     for(int y = drawStartY; y < drawEndY; y++) //for every pixel of the current stripe
                     {
-                        int d = (y) * 256 - h * 128 + spriteHeight * 128;
+                        int d = y * 256 - h * 128 + spriteHeight * 128;
                         int texY = ((d * TEXTURE_HEIGHT) / spriteHeight) / 256;
                         TPixel* clr = getColor(tx, texX, texY);
                         if(clr != NULL && (clr->r > 0 || clr->g > 0 || clr->b > 0))
@@ -411,7 +424,7 @@ void renderUI(Tigr* screen, int w, int h)
 }
 void renderGame(Tigr* screen)
 {
-    odd = (odd+1)%RENDER_DIVISION;
+    odd = (odd+1)%getRenderDivison();
 
     renderFloorCeiling(screen, screen->w, screen->h);
     renderWalls(screen, screen->w, screen->h);
@@ -429,6 +442,8 @@ void actor_enemy(Sprite* sp, int id, float delta)
     updateAnimation(getEnemyAnimation(en), delta);
     sp->tx = getAnimationFrame(getEnemyAnimation(en));
     if(enemyAttacking(en))
+        return;
+    if(enemyHurting(en))
         return;
     if(spriteDist[id] < ENEMY_VISION_DIST && spriteDist[id] > ENEMY_MIN_DIST)
     {

@@ -23,6 +23,11 @@ void init_animationTextures()
         sprintf(pathBuff, BANDIT_ATTACK_PATH, i-BANDIT_ATTACK(0));
         init_texture(animTextures[i], pathBuff);
     }
+    for(int i = BANDIT_HURT(0); i < BANDIT_HURT(HURT_LENGTH); i++)
+    {
+        sprintf(pathBuff, BANDIT_HURT_PATH, i-BANDIT_HURT(0));
+        init_texture(animTextures[i], pathBuff);
+    }
 }
 void free_animationTextures()
 {
@@ -94,6 +99,13 @@ Animation* new_banditAttack()
     for(int i = 0; i < ATTACK_LENGTH; i++)
         frames[i] = BANDIT_ATTACK(i);
     return new_animation(frames, ATTACK_LENGTH, 0.15f, 1);
+}
+Animation* new_banditHurt()
+{
+    int frames[MAX_ANIMATION_FRAMES];
+    for(int i = 0; i < HURT_LENGTH; i++)
+        frames[i] = BANDIT_HURT(i);
+    return new_animation(frames, HURT_LENGTH, 0.15f, 1);
 }
 
 

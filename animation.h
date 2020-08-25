@@ -8,13 +8,16 @@
 #define BANDIT_IDLE_PATH   ("res/textures/animations/bandit/idle0.png")
 #define BANDIT_RUN_PATH    ("res/textures/animations/bandit/run%d.png")
 #define BANDIT_ATTACK_PATH ("res/textures/animations/bandit/attack%d.png")
+#define BANDIT_HURT_PATH   ("res/textures/animations/bandit/hurt%d.png")
 
-#define ANIMATION_TEXTURE_COUNT (9)
+#define ANIMATION_TEXTURE_COUNT (13)
 #define RUN_LENGTH       (4)
 #define ATTACK_LENGTH    (4)
+#define HURT_LENGTH      (4)
 #define BANDIT_IDLE      (0)
 #define BANDIT_RUN(I)    (1+I)
 #define BANDIT_ATTACK(I) (5+I)
+#define BANDIT_HURT(I)   (9+I)
 
 
 typedef struct
@@ -38,5 +41,6 @@ Texture* getAnimationFrame(Animation* anim);
 Animation* new_banditIdle();
 Animation* new_banditRun();
 Animation* new_banditAttack();
+Animation* new_banditHurt();
 
 #endif // ANIMATION_H

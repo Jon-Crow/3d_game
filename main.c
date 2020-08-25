@@ -13,6 +13,7 @@
 #include "gamestate.h"
 #include "colors.h"
 #include "menu.h"
+#include "settings.h"
 
 float randFloat()
 {
@@ -33,9 +34,9 @@ int main(int argc, char *argv[])
     int frameCount = 0, fps;
     char fpsStr[16];
 
-    setGameState(updateMenu, renderMenu);
-
     printf("about to initialize my shit\n");
+
+    loadSettings();
 
     fontImg = tigrLoadImage("res/fonts/main.png");
     mainFont = tigrLoadFont(fontImg, 1252);
@@ -48,9 +49,11 @@ int main(int argc, char *argv[])
     printf("map initialized\n");
     init_game();
     printf("game initialized\n");
-    screen = tigrWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Hello", 0);
+    screen = tigrWindow(getScreenWidth(), getScreenHeight(), "Hello", 0);
 
     printf("Shit has been initialized\n");
+
+    setGameState(updateMenu, renderMenu);
 
     while (!tigrClosed(screen))
     {
@@ -84,6 +87,8 @@ int main(int argc, char *argv[])
     tigrFree(screen);
     free_colors();
     printf("colors freed\n");
+
+    saveSettings();
 
     printf("Shit has been freed\n");
     return 0;

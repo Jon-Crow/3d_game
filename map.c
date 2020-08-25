@@ -217,19 +217,37 @@ Sprite* getSprite(int i)
 }
 void sortSprites(int order[SPRITE_MAX], float dist[SPRITE_MAX])
 {
+    int j, tempOrder;
+    float tempDist;
+    for (int i = 1; i < getSpriteCount(); i++)
+    {
+        tempDist  = dist[i];
+        tempOrder = order[i];
+        j = i - 1;
 
+        while (j >= 0 && dist[j] < tempDist)
+        {
+            dist[j+1]  = dist[j];
+            order[j+1] = order[j];
+            j = j - 1;
+        }
+        j++;
+        dist[j]  = tempDist;
+        order[j] = tempOrder;
+    }
 }
 int getSpriteCount()
 {
     return spriteCount;
 }
-void addSprite(float x, float y, int tx, void (*actor)(Sprite*, int, float), void (*freeType)(void*), void* type)
+Sprite* addSprite(float x, float y, int tx, void (*actor)(Sprite*, int, float), void (*freeType)(void*), void* type)
 {
     if(spriteCount >= SPRITE_MAX)
-        return;
+        return NULL;
     Sprite* sp = new_sprite(x, y, getTexture(tx), actor, freeType, type);
     sprites[spriteCount] = sp;
     spriteCount++;
+    return sp;
 }
 void removeSprite(Sprite* sp)
 {
@@ -301,6 +319,7 @@ void loadMap(Player* plyr, int m)
         fread(&actorID, sizeof(int), 1, f);
         float x     = spritePos[0];
         float y     = spritePos[1];
+        int tx      = TEXTURE_BIRCH_PLANKS;
         void (*actor)(Sprite*, int, float);
         void (*freeType)(void*);
         void* type;
@@ -309,10 +328,14 @@ void loadMap(Player* plyr, int m)
             type     = NULL;
             freeType = freeType_decoration;
             actor    = actor_decoration;
+            fread(&tx, sizeof(int), 1, f);
+            printf("decoration texture: %d\n", tx);
         }
         else if(actorID == ACTOR_ENEMY)
         {
-            type     = new_enemy(ENEMY_ID_BANDIT);
+            int enemyID;
+            fread(&enemyID, sizeof(int), 1, f);
+            type     = new_enemy(enemyID);
             freeType = freeType_enemy;
             actor    = actor_enemy;
         }
@@ -321,7 +344,7 @@ void loadMap(Player* plyr, int m)
             printf("Invalid sprite type! (%d)\n", actorID);
             break;
         }
-        addSprite(x, y, TEXTURE_BIRCH_PLANKS, actor, freeType, type);
+        addSprite(x, y, tx, actor, freeType, type);
         printf("added sprite\n");
     }
 

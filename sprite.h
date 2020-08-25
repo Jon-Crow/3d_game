@@ -14,10 +14,11 @@
 #define ENEMY_ATTACK_DIST      (0.75f)
 #define ENEMY_SPEED            (1.5f)
 
-#define MAX_ENEMY_ANIMATIONS   (3)
+#define MAX_ENEMY_ANIMATIONS   (4)
 #define ENEMY_ANIMATION_IDLE   (0)
 #define ENEMY_ANIMATION_RUN    (1)
 #define ENEMY_ANIMATION_ATTACK (2)
+#define ENEMY_ANIMATION_HURT   (3)
 
 #define ENEMY_ID_BANDIT        (0)
 
@@ -51,5 +52,9 @@ void free_enemy(Enemy* en);
 Animation* getEnemyAnimation(Enemy* en);
 void setEnemyAnimation(Enemy* en, int anim);
 int enemyAttacking(Enemy* en);
+int enemyHurting(Enemy* en);
+void damageEnemy(Enemy* en, int amnt);
+int isDecoration(Sprite* sp);
+int isEnemy(Sprite* sp);
 
 #endif // SPRITE_H

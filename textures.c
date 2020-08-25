@@ -40,6 +40,11 @@ void free_texture(Texture* tx)
 void init_texture(Texture* tx, const char* path)
 {
     Tigr* img = tigrLoadImage(path);
+    if(img == NULL)
+    {
+        printf("Could not load %s\n", path);
+        return;
+    }
     for(int x = 0; x < TEXTURE_WIDTH; x++)
     {
         for(int y = 0; y < TEXTURE_HEIGHT; y++)
@@ -61,6 +66,7 @@ void init_textures()
 	for(int i = 0; i < TEXTURE_COUNT; i++)
 		textures[i] = new_texture(TEXTURE_WIDTH, TEXTURE_HEIGHT);
 
+	init_texture(textures[TEXTURE_BARREL], "res/textures/barrel.png");
 	init_texture(textures[TEXTURE_BIRCH_PLANKS], "res/textures/birch_planks.png");
 	init_texture(textures[TEXTURE_COBBLESTONE], "res/textures/cobblestone.png");
 	init_texture(textures[TEXTURE_CRACKED_STONE_BRICKS], "res/textures/cracked_stone_bricks.png");
@@ -71,6 +77,7 @@ void init_textures()
 	init_texture(textures[TEXTURE_GRASS_PATH_TOP], "res/textures/grass_path_top.png");
 	init_texture(textures[TEXTURE_MOSSY_STONE_BRICKS], "res/textures/mossy_stone_bricks.png");
 	init_texture(textures[TEXTURE_OAK_PLANKS], "res/textures/oak_planks.png");
+	init_texture(textures[TEXTURE_PILLAR], "res/textures/pillar.png");
 	init_texture(textures[TEXTURE_QUARTZ_BRICKS], "res/textures/quartz_bricks.png");
 	init_texture(textures[TEXTURE_QUARTZ_PILLAR], "res/textures/quartz_pillar.png");
 	init_texture(textures[TEXTURE_SPRUCE_PLANKS], "res/textures/spruce_planks.png");

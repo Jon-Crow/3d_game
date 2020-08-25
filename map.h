@@ -7,7 +7,7 @@
 
 #define MAP_WIDTH    (50)
 #define MAP_HEIGHT   (50)
-#define SPRITE_MAX   (64)
+#define SPRITE_MAX   (256)
 
 void init_map();
 void free_map();
@@ -18,7 +18,7 @@ Texture* getCeilingTexture(int x, int y);
 Sprite* getSprite(int i);
 void sortSprites(int order[SPRITE_MAX], float dist[SPRITE_MAX]);
 int getSpriteCount();
-void addSprite(float x, float y, int tx, void (*actor)(Sprite*, int, float), void (*freeType)(void*), void* type);
+Sprite* addSprite(float x, float y, int tx, void (*actor)(Sprite*, int, float), void (*freeType)(void*), void* type);
 void removeSprite(Sprite* sp);
 void removeSpriteAt(int sprite);
 
