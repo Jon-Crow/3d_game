@@ -25,5 +25,6 @@ int getStat(StatBlock* stats, int stat);
 int getStatMax(StatBlock* stats, int stat);
 float getStatPercent(StatBlock* stats, int stat);
 void damage(StatBlock* stats, int amnt);
+int isDead(StatBlock* stats);
 
 #endif // STATBLOCK_H

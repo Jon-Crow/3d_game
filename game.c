@@ -125,7 +125,7 @@ void rotate(float spd)
 void updateSprites(float delta)
 {
     Sprite* sp;
-    for(int i = 0; i < getSpriteCount(); i++)
+    for(int i = getSpriteCount()-1; i >= 0; i--)
     {
         sp = getSprite(i);
         spriteOrder[i] = i;
@@ -154,18 +154,40 @@ void updateGame(Tigr* screen, float delta)
         rotate(delta*2);
     if(tigrKeyHeld(screen, 'D'))
         rotate(-delta*2);
-    if(tigrKeyDown(screen, 'X'))
+    if(mBtns&MOUSE_LEFT && !(mBtns_prev&MOUSE_LEFT))
     {
         Sprite* sp;
         for(int i = 0; i < getSpriteCount(); i++)
         {
-            sp = getSprite(i);
+            sp = getSprite(spriteOrder[i]);
             if(isEnemy(sp))
-                damageEnemy((Enemy*)sp->type, 5);
+            {
+                if(spriteDist[i] <= ENEMY_ATTACK_DIST)
+                {
+                    float reqDir = directionTo(plyr->pos, sp->pos);
+                    float minDir = reqDir-0.2f;
+                    float maxDir = reqDir+0.2f;
+                    float dir    = direction(plyr->dir);
+                    if(minDir < -M_PI)
+                        minDir = M_PI-minDir;
+                    if(maxDir > M_PI)
+                        maxDir = maxDir - M_PI;
+                    if(minDir > maxDir)
+                    {
+                        float temp = maxDir;
+                        maxDir = minDir;
+                        minDir = temp;
+                    }
+                    printf("dir: %.2f, req: %.2f, min: %.2f, max: %.2f\n", dir, reqDir, minDir, maxDir);
+                    if(dir > minDir && dir < maxDir)
+                    {
+                        damageEnemy((Enemy*)sp->type, 5);
+                        break;
+                    }
+                }
+            }
         }
     }
-    if(mBtns&MOUSE_LEFT && !(mBtns_prev&MOUSE_LEFT))
-        printf("LEFT!\n");
 
     mBtns_prev = mBtns;
 }
@@ -445,6 +467,13 @@ void actor_enemy(Sprite* sp, int id, float delta)
         return;
     if(enemyHurting(en))
         return;
+    if(enemyDying(en))
+        return;
+    else if(isDead(en->stats))
+    {
+        removeSprite(sp);
+        return;
+    }
     if(spriteDist[id] < ENEMY_VISION_DIST && spriteDist[id] > ENEMY_MIN_DIST)
     {
         pointTo(sp->dir, sp->pos, plyr->pos);

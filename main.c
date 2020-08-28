@@ -14,6 +14,7 @@
 #include "colors.h"
 #include "menu.h"
 #include "settings.h"
+#include "weapon.h"
 
 float randFloat()
 {
@@ -50,6 +51,7 @@ int main(int argc, char *argv[])
     init_game();
     printf("game initialized\n");
     screen = tigrWindow(getScreenWidth(), getScreenHeight(), "Hello", 0);
+    sprintf(fpsStr, "--");
 
     printf("Shit has been initialized\n");
 
@@ -68,8 +70,9 @@ int main(int argc, char *argv[])
             fps = frameCount;
             frameCount = 0;
             fpsTime = 0;
+            sprintf(fpsStr, "fps: %d", fps);
+            printf("%s\n", fpsStr);
         }
-        sprintf(fpsStr, "fps: %d", fps);
         tigrPrint(screen, mainFont, 50, 50, *color(COLOR_WHITE), fpsStr);
 
         tigrUpdate(screen);

@@ -21,6 +21,14 @@ float magnitude(Vector2f* v)
 {
     return sqrt(v->x*v->x + v->y*v->y);
 }
+float direction(Vector2f* v)
+{
+    return (float)atan2(v->y, v->x);
+}
+float directionTo(Vector2f* p1, Vector2f* p2)
+{
+    return (float)atan2(p2->y - p1->y, p2->x - p1->x);
+}
 void normalize(Vector2f* v)
 {
     float mag = magnitude(v);

@@ -63,6 +63,11 @@ void damage(StatBlock* stats, int amnt)
     if(*hp < 0)
         *hp = 0;
 }
+int isDead(StatBlock* stats)
+{
+    return getStat(stats, STAT_HP) <= 0;
+}
+
 
 
 

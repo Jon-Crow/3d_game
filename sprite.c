@@ -4,7 +4,7 @@
 #include "sprite.h"
 #include "game.h"
 
-Sprite* new_sprite(float x, float y, Texture* tx, void (*actor)(Sprite*, int, float), void (*freeType)(void*), void* type)
+Sprite* new_sprite(float x, float y, Texture* tx, SpriteActor actor, SpriteTypeFreeFunc freeType, void* type)
 {
     Sprite* sp = malloc(sizeof(Sprite));
     if(sp == NULL)
@@ -44,6 +44,7 @@ Enemy* new_enemy(int enemyID)
         anims[ENEMY_ANIMATION_RUN]    = new_banditRun();
         anims[ENEMY_ANIMATION_ATTACK] = new_banditAttack();
         anims[ENEMY_ANIMATION_HURT]   = new_banditHurt();
+        anims[ENEMY_ANIMATION_DIE]    = new_banditDie();
         maxHP = 50;
         cdTime = 3;
         attack = attack_bandit;
@@ -95,11 +96,21 @@ int enemyHurting(Enemy* en)
         return getEnemyAnimation(en)->done == 0;
     return 0;
 }
+int enemyDying(Enemy* en)
+{
+    if(en->curAnim == ENEMY_ANIMATION_DIE)
+        return getEnemyAnimation(en)->done == 0;
+    return 0;
+}
 void damageEnemy(Enemy* en, int amnt)
 {
-    printf("enemy address: %d\n", en);
+    if(enemyDying(en))
+        return;
     damage(en->stats, amnt);
-    setEnemyAnimation(en, ENEMY_ANIMATION_HURT);
+    if(isDead(en->stats))
+        setEnemyAnimation(en, ENEMY_ANIMATION_DIE);
+    else
+        setEnemyAnimation(en, ENEMY_ANIMATION_HURT);
 }
 int isDecoration(Sprite* sp)
 {

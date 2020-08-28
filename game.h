@@ -5,6 +5,7 @@
 #include "vectors.h"
 #include "sprite.h"
 #include "statblock.h"
+#include "weapon.h"
 
 typedef struct
 {

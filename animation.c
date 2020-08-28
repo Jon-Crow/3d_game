@@ -6,6 +6,13 @@
 
 static Texture* animTextures[ANIMATION_TEXTURE_COUNT];
 
+#define INIT_TEXTURES(START,END,PATH) \
+    for(int i = START; i < END; i++) \
+    { \
+        sprintf(pathBuff, PATH, i-START); \
+        init_texture(animTextures[i], pathBuff); \
+    }
+
 void init_animationTextures()
 {
     char pathBuff[128];
@@ -13,21 +20,10 @@ void init_animationTextures()
         animTextures[i] = new_texture(TEXTURE_WIDTH, TEXTURE_HEIGHT);
 
     init_texture(animTextures[0], BANDIT_IDLE_PATH);
-    for(int i = BANDIT_RUN(0); i < BANDIT_RUN(RUN_LENGTH); i++)
-    {
-        sprintf(pathBuff, BANDIT_RUN_PATH, i-BANDIT_RUN(0));
-        init_texture(animTextures[i], pathBuff);
-    }
-    for(int i = BANDIT_ATTACK(0); i < BANDIT_ATTACK(ATTACK_LENGTH); i++)
-    {
-        sprintf(pathBuff, BANDIT_ATTACK_PATH, i-BANDIT_ATTACK(0));
-        init_texture(animTextures[i], pathBuff);
-    }
-    for(int i = BANDIT_HURT(0); i < BANDIT_HURT(HURT_LENGTH); i++)
-    {
-        sprintf(pathBuff, BANDIT_HURT_PATH, i-BANDIT_HURT(0));
-        init_texture(animTextures[i], pathBuff);
-    }
+    INIT_TEXTURES(BANDIT_RUN(0), BANDIT_RUN(RUN_LENGTH), BANDIT_RUN_PATH)
+    INIT_TEXTURES(BANDIT_ATTACK(0), BANDIT_ATTACK(ATTACK_LENGTH), BANDIT_ATTACK_PATH)
+    INIT_TEXTURES(BANDIT_HURT(0), BANDIT_HURT(HURT_LENGTH), BANDIT_HURT_PATH)
+    INIT_TEXTURES(BANDIT_DIE(0), BANDIT_DIE(DIE_LENGTH), BANDIT_DIE_PATH)
 }
 void free_animationTextures()
 {
@@ -81,6 +77,13 @@ Texture* getAnimationFrame(Animation* anim)
     return animTextures[anim->frames[anim->curFrame]];
 }
 
+#define INIT_ANIMATION(LEN,START,TIME,ONESHOT) \
+    int frames[MAX_ANIMATION_FRAMES]; \
+    for(int i = 0; i < LEN; i++) \
+        frames[i] = START+i; \
+    return new_animation(frames, LEN, TIME, ONESHOT);
+
+
 Animation* new_banditIdle()
 {
     int frames[MAX_ANIMATION_FRAMES] = {BANDIT_IDLE};
@@ -88,24 +91,19 @@ Animation* new_banditIdle()
 }
 Animation* new_banditRun()
 {
-    int frames[MAX_ANIMATION_FRAMES];
-    for(int i = 0; i < RUN_LENGTH; i++)
-        frames[i] = BANDIT_RUN(i);
-    return new_animation(frames, RUN_LENGTH, 0.25f, 0);
+    INIT_ANIMATION(RUN_LENGTH, BANDIT_RUN(0), 0.25f, 0)
 }
 Animation* new_banditAttack()
 {
-    int frames[MAX_ANIMATION_FRAMES];
-    for(int i = 0; i < ATTACK_LENGTH; i++)
-        frames[i] = BANDIT_ATTACK(i);
-    return new_animation(frames, ATTACK_LENGTH, 0.15f, 1);
+    INIT_ANIMATION(ATTACK_LENGTH ,BANDIT_ATTACK(0), 0.15f, 1)
 }
 Animation* new_banditHurt()
 {
-    int frames[MAX_ANIMATION_FRAMES];
-    for(int i = 0; i < HURT_LENGTH; i++)
-        frames[i] = BANDIT_HURT(i);
-    return new_animation(frames, HURT_LENGTH, 0.15f, 1);
+    INIT_ANIMATION(HURT_LENGTH ,BANDIT_HURT(0), 0.15f, 1)
+}
+Animation* new_banditDie()
+{
+    INIT_ANIMATION(DIE_LENGTH ,BANDIT_DIE(0), 0.15f, 1)
 }
 
 

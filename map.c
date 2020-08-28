@@ -320,8 +320,8 @@ void loadMap(Player* plyr, int m)
         float x     = spritePos[0];
         float y     = spritePos[1];
         int tx      = TEXTURE_BIRCH_PLANKS;
-        void (*actor)(Sprite*, int, float);
-        void (*freeType)(void*);
+        SpriteActor actor;
+        SpriteTypeFreeFunc freeType;
         void* type;
         if(actorID == ACTOR_DECORATION)
         {
