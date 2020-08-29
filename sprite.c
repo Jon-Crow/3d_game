@@ -49,6 +49,16 @@ Enemy* new_enemy(int enemyID)
         cdTime = 3;
         attack = attack_bandit;
         break;
+    case ENEMY_ID_BAT:
+        anims[ENEMY_ANIMATION_IDLE]   = new_batIdle();
+        anims[ENEMY_ANIMATION_RUN]    = new_batRun();
+        anims[ENEMY_ANIMATION_ATTACK] = new_batAttack();
+        anims[ENEMY_ANIMATION_HURT]   = new_batHurt();
+        anims[ENEMY_ANIMATION_DIE]    = new_batDie();
+        maxHP = 25;
+        cdTime = 1.5f;
+        attack = attack_bandit;
+        break;
     default:
         return en;
     }
@@ -68,6 +78,21 @@ void free_enemy(Enemy* en)
         free_animation(en->anims[i]);
     free_statblock(en->stats);
     free(en);
+}
+Spell* new_spell(int damage, int type, float speed)
+{
+    Spell* spell = malloc(sizeof(Spell));
+    if(spell == NULL)
+        return NULL;
+
+    spell->damage = damage;
+    spell->type   = type;
+    spell->speed  = speed;
+    return spell;
+}
+void free_spell(Spell* spell)
+{
+    free(spell);
 }
 Animation* getEnemyAnimation(Enemy* en)
 {
@@ -119,6 +144,10 @@ int isDecoration(Sprite* sp)
 int isEnemy(Sprite* sp)
 {
     return sp->actor == actor_enemy;
+}
+int isSpell(Sprite* sp)
+{
+    return sp->actor == actor_spell;
 }
 
 

@@ -19,11 +19,19 @@ void init_animationTextures()
     for(int i = 0; i < ANIMATION_TEXTURE_COUNT; i++)
         animTextures[i] = new_texture(TEXTURE_WIDTH, TEXTURE_HEIGHT);
 
-    init_texture(animTextures[0], BANDIT_IDLE_PATH);
+    //BANDIT
+    init_texture(animTextures[BANDIT_IDLE], BANDIT_IDLE_PATH);
     INIT_TEXTURES(BANDIT_RUN(0), BANDIT_RUN(RUN_LENGTH), BANDIT_RUN_PATH)
     INIT_TEXTURES(BANDIT_ATTACK(0), BANDIT_ATTACK(ATTACK_LENGTH), BANDIT_ATTACK_PATH)
     INIT_TEXTURES(BANDIT_HURT(0), BANDIT_HURT(HURT_LENGTH), BANDIT_HURT_PATH)
     INIT_TEXTURES(BANDIT_DIE(0), BANDIT_DIE(DIE_LENGTH), BANDIT_DIE_PATH)
+
+    //BAT
+    init_texture(animTextures[BAT_IDLE], BAT_IDLE_PATH);
+    INIT_TEXTURES(BAT_RUN(0), BAT_RUN(RUN_LENGTH), BAT_RUN_PATH)
+    INIT_TEXTURES(BAT_ATTACK(0), BAT_ATTACK(ATTACK_LENGTH), BAT_ATTACK_PATH)
+    INIT_TEXTURES(BAT_HURT(0), BAT_HURT(HURT_LENGTH), BAT_HURT_PATH)
+    INIT_TEXTURES(BAT_DIE(0), BAT_DIE(DIE_LENGTH), BAT_DIE_PATH)
 }
 void free_animationTextures()
 {
@@ -104,6 +112,28 @@ Animation* new_banditHurt()
 Animation* new_banditDie()
 {
     INIT_ANIMATION(DIE_LENGTH ,BANDIT_DIE(0), 0.15f, 1)
+}
+
+Animation* new_batIdle()
+{
+    int frames[MAX_ANIMATION_FRAMES] = {BAT_IDLE};
+    return new_animation(frames, 1, 0, 1);
+}
+Animation* new_batRun()
+{
+    INIT_ANIMATION(RUN_LENGTH, BAT_RUN(0), 0.1f, 0)
+}
+Animation* new_batAttack()
+{
+    INIT_ANIMATION(ATTACK_LENGTH ,BAT_ATTACK(0), 0.15f, 1)
+}
+Animation* new_batHurt()
+{
+    INIT_ANIMATION(HURT_LENGTH ,BAT_HURT(0), 0.15f, 1)
+}
+Animation* new_batDie()
+{
+    INIT_ANIMATION(DIE_LENGTH ,BAT_DIE(0), 0.15f, 1)
 }
 
 

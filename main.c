@@ -71,7 +71,6 @@ int main(int argc, char *argv[])
             frameCount = 0;
             fpsTime = 0;
             sprintf(fpsStr, "fps: %d", fps);
-            printf("%s\n", fpsStr);
         }
         tigrPrint(screen, mainFont, 50, 50, *color(COLOR_WHITE), fpsStr);
 

@@ -5,9 +5,28 @@
 
 #include "texture.h"
 #include "animation.h"
+#include "weapon.h"
 
 static Texture** textures;
 
+Tigr* scaleImage(Tigr* img, int w, int h)
+{
+    float rx = (float)img->w/w;
+    float ry = (float)img->h/h;
+    Tigr* scaled = tigrBitmap(w, h);
+    for(int y = 0; y < h; y++)
+    {
+        for(int x = 0; x < w; x++)
+        {
+            int sx = (int)(x*rx);
+            int sy = (int)(y*ry);
+            TPixel* dst = &scaled->pix[y*w + x];
+            TPixel* src = &img->pix[sy*img->w + sx];
+            memcpy(dst, src, sizeof(TPixel));
+        }
+    }
+    return scaled;
+}
 TPixel* new_tpixel(int a, int r, int g, int b)
 {
     TPixel* px = malloc(sizeof(TPixel));
@@ -82,8 +101,10 @@ void init_textures()
 	init_texture(textures[TEXTURE_QUARTZ_PILLAR], "res/textures/quartz_pillar.png");
 	init_texture(textures[TEXTURE_SPRUCE_PLANKS], "res/textures/spruce_planks.png");
 	init_texture(textures[TEXTURE_STONE_BRICKS], "res/textures/stone_bricks.png");
+	init_texture(textures[TEXTURE_FIREBALL], "res/textures/fireball.png");
 
 	init_animationTextures();
+	init_weaponTextures();
 }
 void free_textures()
 {
@@ -91,6 +112,7 @@ void free_textures()
         free_texture(textures[i]);
     free(textures);
     free_animationTextures();
+    free_weaponTextures();
 }
 Texture* getTexture(int t)
 {

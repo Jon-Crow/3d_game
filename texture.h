@@ -5,7 +5,7 @@
 
 #define TEXTURE_WIDTH                (32)
 #define TEXTURE_HEIGHT               (32)
-#define TEXTURE_COUNT (16)
+#define TEXTURE_COUNT (17)
 #define TEXTURE_BARREL (0)
 #define TEXTURE_BIRCH_PLANKS (1)
 #define TEXTURE_COBBLESTONE (2)
@@ -22,6 +22,7 @@
 #define TEXTURE_QUARTZ_PILLAR (13)
 #define TEXTURE_SPRUCE_PLANKS (14)
 #define TEXTURE_STONE_BRICKS (15)
+#define TEXTURE_FIREBALL (16)
 
 
 typedef struct
@@ -30,6 +31,7 @@ typedef struct
     int w, h;
 } Texture;
 
+Tigr* scaleImage(Tigr* img, int w, int h);
 Texture* new_texture(int w, int h);
 void free_texture(Texture* tx);
 void init_texture(Texture* tx, const char* path);

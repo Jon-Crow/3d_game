@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
 
 #include "game.h"
@@ -16,12 +17,21 @@
 #define PLANE_X   (plyr->plane->x)
 #define PLANE_Y   (plyr->plane->y)
 
+#define PLAYER_FRAME_PATH   ("res/textures/ui/player_frame.png")
+#define PLAYER_FRAME_WIDTH  (256)
+#define PLAYER_FRAME_HEIGHT (128)
+#define HP_BAR_WIDTH    (PLAYER_FRAME_HEIGHT*3/4)
+#define HP_BAR_HEIGHT   (PLAYER_FRAME_HEIGHT*3/4)
+#define HP_BAR_X        (PLAYER_FRAME_HEIGHT/8)
+#define HP_BAR_Y        (PLAYER_FRAME_HEIGHT/8)
+
 static Player* plyr;
 static int odd;
 static int spriteOrder[SPRITE_MAX];
 static float spriteDist[SPRITE_MAX];
 static float* zBuff;
 static float enemyCooldowns[SPRITE_MAX];
+static Tigr* playerFrame;
 
 Player* new_player()
 {
@@ -33,7 +43,11 @@ Player* new_player()
     plyr->dir   = new_vector2f(1.0f,0.0f);
     plyr->plane = new_vector2f(0.0f,0.66f);
     plyr->stats = new_statblock(100);
-    printf("hp: %d\n", getStat(plyr->stats, STAT_HP));
+    plyr->inv   = new_inventory();
+    addWeapon(plyr->inv, new_weapon(LONGSWORD_NAME, LONGSWORD_ID, WEAPON_TYPE_MELEE));
+    addWeapon(plyr->inv, new_weapon(FIRESTAFF_NAME, FIRESTAFF_ID, WEAPON_TYPE_STAFF));
+    plyr->weap  = plyr->inv->wpns[0];
+    plyr->book  = new_questBook();
     return plyr;
 }
 void free_player(Player* plyr)
@@ -42,6 +56,8 @@ void free_player(Player* plyr)
     free_vector2f(plyr->dir);
     free_vector2f(plyr->plane);
     free_statblock(plyr->stats);
+    free_inventory(plyr->inv);
+    free_questBook(plyr->book);
     free(plyr);
 }
 void init_game()
@@ -58,12 +74,17 @@ void init_game()
     for(int i = 0; i < getScreenWidth(); i++)
         zBuff[i] = 0;
 
+    Tigr* frameImg = tigrLoadImage(PLAYER_FRAME_PATH);
+    playerFrame = scaleImage(frameImg, PLAYER_FRAME_WIDTH, PLAYER_FRAME_HEIGHT);
+    tigrFree(frameImg);
+
     loadMap(plyr, 0);
 }
 void free_game()
 {
     free_player(plyr);
     free(zBuff);
+    tigrFree(playerFrame);
 }
 void setPixelRGB(Tigr* screen, int x, int y, int r, int g, int b)
 {
@@ -79,9 +100,7 @@ void setPixel(Tigr* screen, int x, int y, TPixel* clr)
         TPixel* px = &(screen->pix[y*screen->w+x]);
         if(px == NULL)
             return;
-        px->r = clr->r;
-        px->g = clr->g;
-        px->b = clr->b;
+        memcpy(px, clr, sizeof(TPixel));
     }
 }
 void setPixelI(Tigr* screen, int i, TPixel* clr)
@@ -89,9 +108,7 @@ void setPixelI(Tigr* screen, int i, TPixel* clr)
     TPixel* px = &(screen->pix[i]);
     if(px == NULL)
         return;
-    px->r = clr->r;
-    px->g = clr->g;
-    px->b = clr->b;
+    memcpy(px, clr, sizeof(TPixel));
 }
 void setPixelScaled(Tigr* screen, int x, int y, TPixel* clr, float scale)
 {
@@ -105,16 +122,21 @@ void setPixelScaled(Tigr* screen, int x, int y, TPixel* clr, float scale)
         px->b = (int)(clr->b*scale);
     }
 }
-void move(Vector2f* pos, Vector2f* dir, float spd)
+int move(Vector2f* pos, Vector2f* dir, float spd)
 {
     float oldX = pos->x,
           oldY = pos->y;
+
     pos->x += dir->x*spd;
-    if(isWallAt((int)pos->x, (int)pos->y))
+    int hitX = isWallAt((int)pos->x, (int)pos->y);
+    if(hitX)
         pos->x = oldX;
     pos->y += dir->y*spd;
-    if(isWallAt((int)pos->x, (int)pos->y))
+    int hitY = isWallAt((int)pos->x, (int)pos->y);
+    if(hitY)
         pos->y = oldY;
+
+    return hitX | hitY;
 }
 void rotate(float spd)
 {
@@ -134,10 +156,26 @@ void updateSprites(float delta)
     }
     sortSprites(spriteOrder, spriteDist);
 }
-
-#define MOUSE_LEFT   (0x001)
-#define MOUSE_MIDDLE (0x010)
-#define MOUSE_RIGHT  (0x100)
+Sprite* getOrderedSprite(int spriteI)
+{
+    return getSprite(spriteOrder[spriteI]);
+}
+int getDistanceFromPlayer(int spriteI)
+{
+    return spriteDist[spriteI];
+}
+Player* getPlayer()
+{
+    return plyr;
+}
+Vector2f* getPlayerPos()
+{
+    return plyr->pos;
+}
+Vector2f* getPlayerDir()
+{
+    return plyr->dir;
+}
 
 void updateGame(Tigr* screen, float delta)
 {
@@ -154,40 +192,17 @@ void updateGame(Tigr* screen, float delta)
         rotate(delta*2);
     if(tigrKeyHeld(screen, 'D'))
         rotate(-delta*2);
-    if(mBtns&MOUSE_LEFT && !(mBtns_prev&MOUSE_LEFT))
+    for(int i = '1'; i <= '9'; i++)
     {
-        Sprite* sp;
-        for(int i = 0; i < getSpriteCount(); i++)
+        if(tigrKeyDown(screen, i))
         {
-            sp = getSprite(spriteOrder[i]);
-            if(isEnemy(sp))
-            {
-                if(spriteDist[i] <= ENEMY_ATTACK_DIST)
-                {
-                    float reqDir = directionTo(plyr->pos, sp->pos);
-                    float minDir = reqDir-0.2f;
-                    float maxDir = reqDir+0.2f;
-                    float dir    = direction(plyr->dir);
-                    if(minDir < -M_PI)
-                        minDir = M_PI-minDir;
-                    if(maxDir > M_PI)
-                        maxDir = maxDir - M_PI;
-                    if(minDir > maxDir)
-                    {
-                        float temp = maxDir;
-                        maxDir = minDir;
-                        minDir = temp;
-                    }
-                    printf("dir: %.2f, req: %.2f, min: %.2f, max: %.2f\n", dir, reqDir, minDir, maxDir);
-                    if(dir > minDir && dir < maxDir)
-                    {
-                        damageEnemy((Enemy*)sp->type, 5);
-                        break;
-                    }
-                }
-            }
+            int wpn = i-'1';
+            if(wpn < plyr->inv->wpnCount)
+                plyr->weap = plyr->inv->wpns[wpn];
         }
     }
+
+    plyr->weap->actor(plyr->weap, delta, mBtns, mBtns_prev);
 
     mBtns_prev = mBtns;
 }
@@ -433,16 +448,13 @@ void renderSprites(Tigr* screen, int w, int h)
         }
     }
 }
-
-#define HP_BAR_WIDTH(W) (W-100)
-#define HP_BAR_HEIGHT   (10)
-#define HP_BAR_X        (50)
-#define HP_BAR_Y(H)     (H-HP_BAR_HEIGHT-50)
 void renderUI(Tigr* screen, int w, int h)
 {
     float hpPerc = getStatPercent(plyr->stats, STAT_HP);
-    tigrFill(screen, HP_BAR_X, HP_BAR_Y(h), HP_BAR_WIDTH(w), HP_BAR_HEIGHT, *color(COLOR_RED));
-    tigrFill(screen, HP_BAR_X, HP_BAR_Y(h), HP_BAR_WIDTH(w)*hpPerc, HP_BAR_HEIGHT, *color(COLOR_GREEN));
+    tigrFill(screen, HP_BAR_X, HP_BAR_Y, HP_BAR_WIDTH, HP_BAR_HEIGHT, *color(COLOR_RED));
+    tigrFill(screen, HP_BAR_X, HP_BAR_Y+HP_BAR_HEIGHT*(1-hpPerc), HP_BAR_WIDTH, HP_BAR_HEIGHT*hpPerc, *color(COLOR_GREEN));
+
+    tigrBlitAlpha(screen, playerFrame, 0, 0, 0, 0, PLAYER_FRAME_WIDTH, PLAYER_FRAME_HEIGHT, 1.0f);
 }
 void renderGame(Tigr* screen)
 {
@@ -451,6 +463,7 @@ void renderGame(Tigr* screen)
     renderFloorCeiling(screen, screen->w, screen->h);
     renderWalls(screen, screen->w, screen->h);
     renderSprites(screen, screen->w, screen->h);
+    plyr->weap->render(screen, plyr->weap);
     renderUI(screen, screen->w, screen->h);
 }
 
@@ -503,6 +516,35 @@ void attack_bandit(Enemy* bandit, StatBlock* tar)
     damage(tar, 5);
 }
 
+
+void actor_spell(Sprite* sp, int id, float delta)
+{
+    Spell* spell = (Spell*)sp->type;
+    if(move(sp->pos, sp->dir, spell->speed))
+    {
+        removeSprite(sp);
+        return;
+    }
+    Sprite* tar;
+    for(int i = 0; i < getSpriteCount(); i++)
+    {
+        tar = getOrderedSprite(i);
+        if(isEnemy(tar))
+        {
+            float dist = (sp->pos->x-tar->pos->x)*(sp->pos->x-tar->pos->x) + (sp->pos->y-tar->pos->y)*(sp->pos->y-tar->pos->y);
+            if(dist < ENEMY_ATTACK_DIST)
+            {
+                damageEnemy((Enemy*)tar->type, spell->damage);
+                removeSprite(sp);
+                return;
+            }
+        }
+    }
+}
+void freeType_spell(void* type)
+{
+    free_spell((Spell*)type);
+}
 
 
 

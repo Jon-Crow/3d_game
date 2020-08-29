@@ -8,6 +8,7 @@
 
 #define SPRITE_TYPE_DECORATION (0)
 #define SPRITE_TYPE_ENEMY      (1)
+#define SPRITE_TYPE_SPELL      (2)
 
 #define ENEMY_VISION_DIST      (10.0f)
 #define ENEMY_MIN_DIST         (0.5f)
@@ -22,9 +23,13 @@
 #define ENEMY_ANIMATION_DIE    (4)
 
 #define ENEMY_ID_BANDIT        (0)
+#define ENEMY_ID_BAT           (1)
+
+#define SPELL_TYPE_FIRE        (0)
 
 typedef struct sSprite Sprite;
-typedef struct sEnemy Enemy;
+typedef struct sEnemy  Enemy;
+typedef struct sSpell  Spell;
 
 typedef void (*SpriteActor)(Sprite*, int, float);
 typedef void (*SpriteTypeFreeFunc)(void *);
@@ -49,11 +54,19 @@ struct sEnemy
     Animation* anims[MAX_ENEMY_ANIMATIONS];
     int curAnim;
 };
+struct sSpell
+{
+    int damage;
+    int type;
+    float speed;
+};
 
 Sprite* new_sprite(float x, float y, Texture* tx, SpriteActor actor, SpriteTypeFreeFunc freeType, void* type);
 void free_sprite(Sprite* sp);
 Enemy* new_enemy(int enemyID);
 void free_enemy(Enemy* en);
+Spell* new_spell(int damage, int type, float speed);
+void free_spell(Spell* spell);
 Animation* getEnemyAnimation(Enemy* en);
 void setEnemyAnimation(Enemy* en, int anim);
 int enemyAttacking(Enemy* en);
@@ -62,5 +75,6 @@ int enemyDying(Enemy* en);
 void damageEnemy(Enemy* en, int amnt);
 int isDecoration(Sprite* sp);
 int isEnemy(Sprite* sp);
+int isSpell(Sprite* sp);
 
 #endif // SPRITE_H
